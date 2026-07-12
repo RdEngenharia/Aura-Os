@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Oswald", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-cm-ink: #FF5722;
+  --color-cm-ink-hover: #E64A19;
+  --color-cm-paper: #FFF5F2;
+  --color-cm-card: #FFFFFF;
+  --color-cm-line: rgba(255, 87, 34, 0.18);
+  --color-cm-text: #2E1B15;
+  --color-cm-text-mute: #7A625A;
+
+  --color-cm-baixa: #4C8C5B;
+  --color-cm-media: #B98A22;
+  --color-cm-alta: #C9722E;
+  --color-cm-urgente: #C23B3B;
+
+  --color-cm-aberta: #6B7280;
+  --color-cm-atribuida: #3B6EA5;
+  --color-cm-execucao: #B98A22;
+  --color-cm-concluida: #4C8C5B;
+}
+
+body {
+  background-color: var(--color-cm-paper);
+  background-image: radial-gradient(at 10% 20%, rgba(255,255,255,0.4) 0px, transparent 50%),
+                    radial-gradient(at 90% 80%, rgba(255,255,255,0.3) 0px, transparent 50%),
+                    radial-gradient(at 50% 50%, rgba(255, 87, 34, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: var(--color-cm-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
