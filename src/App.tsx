@@ -24,7 +24,7 @@ import { ORDENS_INICIAIS } from './mockData';
 const LOCAL_STORAGE_KEY = 'ordens_servico_central';
 
 const USUARIOS_PADRAO: Usuario[] = [
-  { id: 'usr-1', name: 'Maria Silva', username: 'maria', password: '123', role: 'solicitante' },
+  { id: 'usr-1', name: 'Abrir OS', username: 'abrir_os', password: '', role: 'solicitante' },
   { id: 'usr-2', name: 'Carlos Técnico', username: 'carlos', password: '123', role: 'executor' },
   { id: 'usr-3', name: 'Julia Supervisora', username: 'julia', password: '123', role: 'supervisor' },
   { id: 'usr-4', name: 'Aline Recepção', username: 'aline', password: '123', role: 'supervisor_recepcao' },
@@ -100,7 +100,20 @@ export default function App() {
     try {
       const stored = localStorage.getItem('usuarios_central');
       if (stored) {
-        setUsuarios(JSON.parse(stored));
+        let parsed = JSON.parse(stored) as Usuario[];
+        // Migração: se ainda tem Maria Silva, substitui por Abrir OS
+        let migrated = false;
+        parsed = parsed.map(u => {
+          if (u.id === 'usr-1' && (u.name === 'Maria Silva' || u.username === 'maria')) {
+            migrated = true;
+            return { id: 'usr-1', name: 'Abrir OS', username: 'abrir_os', password: '', role: 'solicitante' };
+          }
+          return u;
+        });
+        if (migrated) {
+          localStorage.setItem('usuarios_central', JSON.stringify(parsed));
+        }
+        setUsuarios(parsed);
       } else {
         localStorage.setItem('usuarios_central', JSON.stringify(USUARIOS_PADRAO));
         setUsuarios(USUARIOS_PADRAO);

@@ -27,14 +27,15 @@ export const SolicitanteView: React.FC<SolicitanteViewProps> = ({
   const [local, setLocal] = useState('');
   const [prioridade, setPrioridade] = useState<PrioridadeOS | null>(null);
   const [detalhes, setDetalhes] = useState('');
+  const [solicitanteNome, setSolicitanteNome] = useState('');
 
   // Estados para busca e filtragem de solicitações passadas
   const [search, setSearch] = useState<string>('');
   const [filterDate, setFilterDate] = useState<string>('');
 
-  // Filtra as ordens de serviço solicitadas pelo usuário logado
+  // Filtra as ordens de serviço solicitadas pelo usuário logado. Se for o totem de "Abrir OS", mostra todas as ordens de solicitantes para fácil acompanhamento.
   const minhasOrdens = ordens
-    .filter(o => o.solicitante === currentUser.name)
+    .filter(o => currentUser.name === 'Abrir OS' ? true : o.solicitante === currentUser.name)
     .sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime());
 
   // Filtragem dinâmica por apartamento/local ou data
@@ -171,9 +172,15 @@ export const SolicitanteView: React.FC<SolicitanteViewProps> = ({
     e.preventDefault();
     if (!prioridade) return;
 
+    const nomeFinal = currentUser.name === 'Abrir OS' ? solicitanteNome.trim() : currentUser.name;
+    if (!nomeFinal) {
+      alert('Por favor, digite seu nome no campo "Nome do Solicitante" antes de abrir a OS.');
+      return;
+    }
+
     onAddOrdem({
       data,
-      solicitante: currentUser.name,
+      solicitante: nomeFinal,
       setor,
       tipoManutencao: tipo,
       local,
@@ -182,6 +189,7 @@ export const SolicitanteView: React.FC<SolicitanteViewProps> = ({
     });
 
     // Reseta o formulário mantendo as configurações padrão básicas
+    setSolicitanteNome('');
     setSetor('');
     setTipo('');
     setLocal('');
@@ -214,7 +222,27 @@ export const SolicitanteView: React.FC<SolicitanteViewProps> = ({
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Campo Nome do Solicitante (Apenas se for o totem geral 'Abrir OS') */}
+            {currentUser.name === 'Abrir OS' && (
+              <div className="bg-cm-paper p-4 rounded-xl border border-cm-line/80 space-y-2">
+                <label className="block text-xs font-bold text-cm-ink uppercase tracking-wider">
+                  Seu Nome Completo <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Maria de Souza Oliveira"
+                  value={solicitanteNome}
+                  onChange={(e) => setSolicitanteNome(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 border border-cm-line rounded-lg text-sm bg-white text-cm-text placeholder-cm-text-mute font-medium focus:outline-none focus:ring-2 focus:ring-cm-ink/20 focus:border-cm-ink transition-all"
+                />
+                <p className="text-[10px] text-cm-text-mute">
+                  Por favor, informe seu nome completo para sabermos quem realizou esta solicitação.
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Campo Data */}
             <div>
               <label className="block text-xs font-semibold text-cm-text-mute uppercase tracking-wider mb-1.5">

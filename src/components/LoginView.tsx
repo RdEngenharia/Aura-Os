@@ -23,14 +23,16 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
       return;
     }
 
-    if (!password) {
-      setErrorMsg('Por favor, insira a senha do usuário.');
-      return;
-    }
+    if (selectedUser.role !== 'solicitante') {
+      if (!password) {
+        setErrorMsg('Por favor, insira a senha do usuário.');
+        return;
+      }
 
-    if (selectedUser.password !== password) {
-      setErrorMsg('Senha incorreta para o usuário selecionado.');
-      return;
+      if (selectedUser.password !== password) {
+        setErrorMsg('Senha incorreta para o usuário selecionado.');
+        return;
+      }
     }
 
     onLogin(selectedUser);
@@ -40,11 +42,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
     setSelectedUser(user);
     setPassword('');
     setErrorMsg(null);
+    if (user.role === 'solicitante') {
+      onLogin(user);
+    }
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'solicitante': return 'Solicitante';
+      case 'solicitante': return 'Abrir OS';
       case 'executor': return 'Executor Técnico';
       case 'supervisor': return 'Supervisor de Manutenção';
       case 'supervisor_recepcao': return 'Sup. de Recepção';
@@ -120,7 +125,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
       </div>
 
       {/* Formulário de Senha */}
-      {selectedUser && (
+      {selectedUser && selectedUser.role !== 'solicitante' && (
         <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-4 bg-white border border-cm-line p-5 rounded-xl shadow-sm">
           <div className="text-center pb-2 border-b border-cm-line">
             <p className="text-[10px] uppercase font-bold text-cm-text-mute tracking-wider">Acessando como</p>
