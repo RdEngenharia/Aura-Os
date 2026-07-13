@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Usuario } from '../types';
-import { Key, User, ShieldAlert, AlertCircle, HelpCircle, Lock, Eye, EyeOff } from 'lucide-react';
+import { Key, User, ShieldAlert, AlertCircle, HelpCircle, Lock, Eye, EyeOff, Terminal } from 'lucide-react';
 
 interface LoginViewProps {
   usuarios: Usuario[];
   onLogin: (user: Usuario) => void;
+  onOpenMatrix: () => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin, onOpenMatrix }) => {
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -74,7 +75,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
   return (
     <div className="flex flex-col items-center justify-center py-8 md:py-12 px-4 max-w-4xl mx-auto">
       {/* Título de Entrada */}
-      <div className="text-center mb-8 max-w-md">
+      <div className="text-center mb-8 max-w-md flex flex-col items-center">
         <h2 className="font-display text-3xl md:text-4xl font-semibold uppercase tracking-wider text-cm-ink mb-2">
           Aura OS
         </h2>
@@ -92,35 +93,49 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
 
       {/* Grid de Seleção de Usuários Cadastrados */}
       <div className="w-full mb-8">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-cm-ink-hover mb-3 text-center">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-cm-ink-hover mb-4 text-center">
           Selecione seu Usuário
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 w-full">
-          {usuarios.map(u => {
-            const isSelected = selectedUser?.id === u.id;
-            return (
-              <button
-                key={u.id}
-                type="button"
-                onClick={() => handleSelectUser(u)}
-                className={`border rounded-xl p-4 text-center flex flex-col items-center justify-center transition-all duration-200 cursor-pointer h-full ${
-                  isSelected
-                    ? 'border-cm-ink bg-white ring-2 ring-cm-ink/15 shadow-md scale-[1.02]'
-                    : 'border-cm-line bg-cm-paper hover:bg-white hover:border-cm-ink-hover'
-                }`}
-              >
-                <span className="text-2xl mb-2.5 block" role="img" aria-label={u.name}>
-                  {getRoleIcon(u.role)}
-                </span>
-                <span className="font-semibold text-xs text-cm-ink tracking-wide line-clamp-1 mb-1">
-                  {u.name}
-                </span>
-                <span className="text-[10px] text-cm-text-mute font-medium uppercase tracking-wide">
-                  {getRoleLabel(u.role)}
-                </span>
-              </button>
-            );
-          })}
+          {(() => {
+            const ROLE_ORDER: Record<string, number> = {
+              solicitante: 1,
+              gerente: 2,
+              supervisor: 3,
+              supervisor_recepcao: 4,
+              executor: 5,
+              admin: 6,
+            };
+            const sortedUsuarios = [...usuarios].sort((a, b) => {
+              return (ROLE_ORDER[a.role] || 99) - (ROLE_ORDER[b.role] || 99);
+            });
+
+            return sortedUsuarios.map((u) => {
+              const isSelected = selectedUser?.id === u.id;
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => handleSelectUser(u)}
+                  className={`border rounded-xl p-4 text-center flex flex-col items-center justify-center transition-all duration-200 cursor-pointer h-full ${
+                    isSelected
+                      ? 'border-cm-ink bg-white ring-2 ring-cm-ink/15 shadow-md scale-[1.02]'
+                      : 'border-cm-line bg-cm-paper hover:bg-white hover:border-cm-ink-hover hover:shadow-sm'
+                  }`}
+                >
+                  <span className="text-2xl mb-2 block" role="img" aria-label={u.name}>
+                    {getRoleIcon(u.role)}
+                  </span>
+                  <span className="font-semibold text-xs text-cm-ink tracking-wide line-clamp-1 mb-1">
+                    {u.name}
+                  </span>
+                  <span className="text-[10px] text-cm-text-mute font-medium uppercase tracking-wide">
+                    {getRoleLabel(u.role)}
+                  </span>
+                </button>
+              );
+            });
+          })()}
         </div>
       </div>
 
@@ -199,6 +214,19 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin }) => {
           </p>
         </div>
       )}
+
+      {/* Botão Matrix Discreto no Canto Inferior */}
+      <div className="mt-8 flex justify-center w-full">
+        <button
+          type="button"
+          onClick={onOpenMatrix}
+          className="text-[10px] font-mono text-cm-text-mute hover:text-green-600 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer opacity-75 hover:opacity-100 py-1.5 px-3 border border-cm-line hover:border-green-500/30 rounded-lg bg-cm-paper/40 hover:bg-green-950/5 shadow-sm"
+          id="btn-matrix-enter"
+        >
+          <Terminal className="w-3.5 h-3.5 text-green-600/70" />
+          <span>[Ver Matrix de Código]</span>
+        </button>
+      </div>
     </div>
   );
 };

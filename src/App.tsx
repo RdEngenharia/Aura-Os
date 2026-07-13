@@ -17,6 +17,7 @@ import { SupervisorView } from './components/SupervisorView';
 import { SupervisorRecepcaoView } from './components/SupervisorRecepcaoView';
 import { GerenteView } from './components/GerenteView';
 import { AdminView } from './components/AdminView';
+import { MatrixRain } from './components/MatrixRain';
 import { OrdemServico, Usuario, PerfilUsuario } from './types';
 import { ORDENS_INICIAIS } from './mockData';
 
@@ -25,10 +26,10 @@ const LOCAL_STORAGE_KEY = 'ordens_servico_central';
 
 const USUARIOS_PADRAO: Usuario[] = [
   { id: 'usr-1', name: 'Abrir OS', username: 'abrir_os', password: '', role: 'solicitante' },
-  { id: 'usr-2', name: 'Carlos Técnico', username: 'carlos', password: '123', role: 'executor' },
+  { id: 'usr-5', name: 'Marcos Gerente', username: 'marcos', password: '123', role: 'gerente' },
   { id: 'usr-3', name: 'Julia Supervisora', username: 'julia', password: '123', role: 'supervisor' },
   { id: 'usr-4', name: 'Aline Recepção', username: 'aline', password: '123', role: 'supervisor_recepcao' },
-  { id: 'usr-5', name: 'Marcos Gerente', username: 'marcos', password: '123', role: 'gerente' },
+  { id: 'usr-2', name: 'Carlos Técnico', username: 'carlos', password: '123', role: 'executor' },
   { id: 'usr-6', name: 'Administrador Geral', username: 'admin', password: 'admin', role: 'admin' },
 ];
 
@@ -44,6 +45,9 @@ export default function App() {
 
   // Lista global de Usuários (com senhas e logins)
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+
+  // Estado para controlar o modo Matrix Rain
+  const [showMatrix, setShowMatrix] = useState(false);
 
   // Estado de carregamento inicial
   const [loading, setLoading] = useState(true);
@@ -331,7 +335,7 @@ export default function App() {
         {/* Se o usuário não estiver autenticado na sessão, exibe a tela de login/perfil */}
         {!currentUser ? (
           <div className="pt-10 md:pt-16">
-            <LoginView usuarios={usuarios} onLogin={handleLogin} />
+            <LoginView usuarios={usuarios} onLogin={handleLogin} onOpenMatrix={() => setShowMatrix(true)} />
           </div>
         ) : (
           <div className="space-y-4">
@@ -430,6 +434,11 @@ export default function App() {
         <span className="text-emerald-400">🔧</span>
         <span className="font-medium tracking-wide">{toastMessage}</span>
       </div>
+
+      {/* Tela de visualização Matrix Rain */}
+      {showMatrix && (
+        <MatrixRain onClose={() => setShowMatrix(false)} />
+      )}
     </div>
   );
 }
