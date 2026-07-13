@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { OrdemServico, PrioridadeOS } from '../types';
+import { OrdemServico, PrioridadeOS, Usuario } from '../types';
 import { PRIORIDADES_INFO, STATUS_COLOR } from '../mockData';
 import { Calendar, MapPin, User, CheckCircle2, Play, UserPlus, Info, AlertCircle, Trash2 } from 'lucide-react';
 
@@ -10,6 +10,7 @@ interface TicketCardProps {
   onUpdateStatus?: (id: string, newStatus: OrdemServico['status'], comment?: string) => void;
   onDelete?: (id: string) => void;
   compact?: boolean;
+  executores?: Usuario[];
 }
 
 /**
@@ -23,7 +24,8 @@ export const TicketCard: React.FC<TicketCardProps> = ({
   onAssign,
   onUpdateStatus,
   onDelete,
-  compact = false
+  compact = false,
+  executores = []
 }) => {
   const [assignName, setAssignName] = useState('');
   const [conclusionComment, setConclusionComment] = useState('');
@@ -217,17 +219,34 @@ export const TicketCard: React.FC<TicketCardProps> = ({
           {/* AÇÕES DE SUPERVISOR */}
           {role === 'supervisor' && ticket.status === 'Aberta' && onAssign && (
             <form onSubmit={handleAssignSubmit} className="flex gap-1.5 w-full">
-              <input
-                type="text"
-                placeholder="Nome do executor"
-                value={assignName}
-                onChange={(e) => setAssignName(e.target.value)}
-                required
-                className="px-2.5 py-1.5 text-xs border border-cm-line rounded bg-white text-cm-text placeholder-cm-text-mute focus:outline-none focus:ring-1 focus:ring-cm-ink w-full md:w-32"
-              />
+              {executores && executores.length > 0 ? (
+                <select
+                  value={assignName}
+                  onChange={(e) => setAssignName(e.target.value)}
+                  required
+                  className="px-2.5 py-1.5 text-xs border border-cm-line rounded bg-white text-cm-text focus:outline-none focus:ring-1 focus:ring-cm-ink w-full md:w-40 cursor-pointer"
+                >
+                  <option value="">Selecione um técnico...</option>
+                  {executores.map(u => (
+                    <option key={u.id || u.name} value={u.name}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Nome do executor"
+                  value={assignName}
+                  onChange={(e) => setAssignName(e.target.value)}
+                  required
+                  className="px-2.5 py-1.5 text-xs border border-cm-line rounded bg-white text-cm-text placeholder-cm-text-mute focus:outline-none focus:ring-1 focus:ring-cm-ink w-full md:w-32"
+                />
+              )}
               <button 
                 type="submit"
-                className="bg-cm-ink hover:bg-cm-ink-hover text-white text-[11px] font-medium px-3 py-1.5 rounded flex items-center gap-1 cursor-pointer transition-colors"
+                disabled={executores && executores.length > 0 && !assignName}
+                className="bg-cm-ink hover:bg-cm-ink-hover text-white text-[11px] font-medium px-3 py-1.5 rounded flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               >
                 <UserPlus className="w-3 h-3" />
                 <span>Atribuir</span>

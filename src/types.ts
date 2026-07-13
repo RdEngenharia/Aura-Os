@@ -34,3 +34,13 @@ export interface Usuario {
   password?: string;
   role: PerfilUsuario;
 }
+
+export interface LogErro {
+  id: string;
+  timestamp: string;
+  level: 'ERROR' | 'WARNING' | 'INFO';
+  origem: string;
+  mensagem: string;
+  detalhes?: string;
+}
+

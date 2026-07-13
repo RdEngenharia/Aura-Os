@@ -38,12 +38,70 @@ interface GerenteViewProps {
  * 2. Dashboard (Gráficos consolidados e tempos médios)
  * 3. Recorrência por Local (Histórico isolado de reincidência e linha do tempo de problemas)
  */
+/**
+ * Função de busca inteligente (smart match) para apartamentos/quartos/locais.
+ * Permite buscar por números de quartos de forma flexível e mapeia sinônimos comuns do hotel (ex: "apto", "quarto").
+ */
+const normalizeText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[.,\-\/\\#@!$%\^&\*;:{}=\-_`~()]/g, ' ') // substitui pontuação por espaço
+    .replace(/\s+/g, ' ') // substitui múltiplos espaços por um único
+    .trim();
+};
+
+const getSynonymNormalizedTokens = (normalizedText: string): string[] => {
+  return normalizedText.split(' ').map(token => {
+    // Normaliza sinônimos de "apartamento"
+    if (/^(apto|apt|apartamento|ap|apto\.)$/.test(token)) {
+      return 'apto';
+    }
+    // Normaliza sinônimos de "quarto"
+    if (/^(quarto|qto|room|qt|quarto\.)$/.test(token)) {
+      return 'quarto';
+    }
+    return token;
+  }).filter(Boolean);
+};
+
+export const smartMatchesLocation = (location: string, query: string): boolean => {
+  const cleanLoc = normalizeText(location);
+  const cleanQuery = normalizeText(query);
+  
+  if (!cleanQuery) return true;
+  if (!cleanLoc) return false;
+
+  const locTokens = getSynonymNormalizedTokens(cleanLoc);
+  const queryTokens = getSynonymNormalizedTokens(cleanQuery);
+
+  // Verifica se todos os tokens da busca são encontrados no local
+  return queryTokens.every(qToken => {
+    // Se o token for um número, tenta fazer correspondência exata do número para evitar falsos parciais (ex: buscar "20" não deve trazer "202")
+    if (/^\d+$/.test(qToken)) {
+      return locTokens.some(lToken => {
+        if (lToken === qToken) return true;
+        // Permite "20a" ou "20-a" contendo "20" como parte do número
+        const numPart = lToken.replace(/\D/g, '');
+        return numPart === qToken;
+      });
+    }
+    
+    // Para tokens de texto normais, aceita busca parcial
+    return locTokens.some(lToken => lToken.includes(qToken));
+  });
+};
+
 export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, onClearAll, onDelete }) => {
   // Controle de Abas
   const [activeTab, setActiveTab] = useState<'hoje' | 'analise' | 'locais'>('hoje');
   
+  const todayStr = new Date().toISOString().slice(0, 10);
+
   // Filtros da aba de Hoje
-  const [selectedDate, setSelectedDate] = useState<string>('2026-07-12'); // Data atual do sistema
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().slice(0, 10)); // Data atual do sistema
   const [roomSearch, setRoomSearch] = useState<string>('');
   const [filterStatusHoje, setFilterStatusHoje] = useState<string>('todas');
 
@@ -183,8 +241,8 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
       // Filtro de data (ou todas)
       const matchDate = selectedDate === 'todas_datas' || o.data === selectedDate;
       
-      // Filtro de termo de apartamento/quarto/local
-      const matchRoom = !roomSearch.trim() || o.local.toLowerCase().includes(roomSearch.toLowerCase().trim());
+      // Filtro inteligente de termo de apartamento/quarto/local (mapeando sinônimos e números flexíveis)
+      const matchRoom = !roomSearch.trim() || smartMatchesLocation(o.local, roomSearch);
       
       // Filtro de status rápido na aba hoje
       const matchStatus = filterStatusHoje === 'todas' || o.status === filterStatusHoje;
@@ -947,9 +1005,9 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex bg-white border border-cm-line rounded-lg p-0.5 shadow-xs">
                 <button
-                  onClick={() => setSelectedDate('2026-07-12')}
+                  onClick={() => setSelectedDate(todayStr)}
                   className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                    selectedDate === '2026-07-12'
+                    selectedDate === todayStr
                       ? 'bg-cm-ink text-white shadow-xs'
                       : 'text-cm-text-mute hover:text-cm-ink'
                   }`}
@@ -1250,14 +1308,14 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
                 {isLocalDropdownOpen && (
                   <div className="absolute left-0 right-0 mt-1 bg-white border border-cm-line rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto divide-y divide-cm-line/50">
                     {locaisUnicos.filter(loc => 
-                      loc.toLowerCase().includes(localSearchQuery.toLowerCase())
+                      smartMatchesLocation(loc, localSearchQuery)
                     ).length === 0 ? (
                       <div className="p-3 text-xs text-cm-text-mute italic text-center">
                         Nenhum local correspondente encontrado
                       </div>
                     ) : (
                       locaisUnicos
-                        .filter(loc => loc.toLowerCase().includes(localSearchQuery.toLowerCase()))
+                        .filter(loc => smartMatchesLocation(loc, localSearchQuery))
                         .map(loc => {
                           const numOcorrencias = ocorrenciasPorLocal[loc]?.total || 0;
                           return (

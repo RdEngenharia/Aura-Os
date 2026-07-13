@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Usuario } from '../types';
 import { Key, User, ShieldAlert, AlertCircle, HelpCircle, Lock, Eye, EyeOff, Terminal } from 'lucide-react';
+import { addErrorLog } from '../utils/logger';
 
 interface LoginViewProps {
   usuarios: Usuario[];
@@ -31,7 +32,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin, onOpenM
       }
 
       if (selectedUser.password !== password) {
-        setErrorMsg('Senha incorreta para o usuário selecionado.');
+        const errorText = 'Senha incorreta para o usuário selecionado.';
+        setErrorMsg(errorText);
+        addErrorLog(
+          'WARNING',
+          'LoginView',
+          `Falha de autenticação: senha incorreta para o usuário "${selectedUser.name}"`,
+          `Usuário: ${selectedUser.username} | Role: ${selectedUser.role} | IP: 192.168.1.102`
+        );
         return;
       }
     }

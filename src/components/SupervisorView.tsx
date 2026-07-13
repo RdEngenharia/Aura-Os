@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { OrdemServico } from '../types';
+import { OrdemServico, Usuario } from '../types';
 import { SETORES } from '../mockData';
 import { TicketCard } from './TicketCard';
 import { LayoutDashboard, Filter, Search, Download } from 'lucide-react';
 
 interface SupervisorViewProps {
   ordens: OrdemServico[];
+  executores?: Usuario[];
   onAssign: (id: string, executorName: string) => void;
   onDelete?: (id: string) => void;
 }
@@ -17,6 +18,7 @@ interface SupervisorViewProps {
  */
 export const SupervisorView: React.FC<SupervisorViewProps> = ({
   ordens,
+  executores = [],
   onAssign,
   onDelete
 }) => {
@@ -351,6 +353,7 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
                       key={o.id}
                       ticket={o}
                       role="supervisor"
+                      executores={executores}
                       onAssign={onAssign}
                       onDelete={onDelete}
                       compact={true}
@@ -384,6 +387,7 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
                       key={o.id}
                       ticket={o}
                       role="supervisor"
+                      executores={executores}
                       onAssign={onAssign}
                       onDelete={onDelete}
                       compact={true}
@@ -417,6 +421,7 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
                       key={o.id}
                       ticket={o}
                       role="supervisor"
+                      executores={executores}
                       onAssign={onAssign}
                       onDelete={onDelete}
                       compact={true}
@@ -433,6 +438,7 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
               key={o.id}
               ticket={o}
               role="supervisor"
+              executores={executores}
               onAssign={onAssign}
               onDelete={onDelete}
             />

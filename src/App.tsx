@@ -394,6 +394,7 @@ export default function App() {
               {activeTab === 'supervisor' && (
                 <SupervisorView 
                   ordens={ordens} 
+                  executores={usuarios.filter(u => u.role === 'executor')}
                   onAssign={handleAssignExecutor} 
                   onDelete={handleDeleteOrdem}
                 />
