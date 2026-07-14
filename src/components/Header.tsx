@@ -46,11 +46,11 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, onLogout }) => {
       {/* Marca / Logo */}
       <div className="flex items-center gap-3.5 z-10">
         <div className="w-10 h-10 border-2 border-white rounded-lg flex items-center justify-center font-mono font-bold text-sm tracking-wider bg-white/10 hover:bg-white/20 transition-colors">
-          Aura
+          VT
         </div>
         <div>
           <h1 className="font-display font-semibold text-lg md:text-xl tracking-wide uppercase leading-none">
-            Aura OS
+            Vértice
           </h1>
           <p className="mt-1 text-xs text-[#F1E4E1] font-mono tracking-tight uppercase">
             Gestão Inteligente de Ordens de Serviço

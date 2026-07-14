@@ -85,7 +85,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ usuarios, onLogin, onOpenM
       {/* Título de Entrada */}
       <div className="text-center mb-8 max-w-md flex flex-col items-center">
         <h2 className="font-display text-3xl md:text-4xl font-semibold uppercase tracking-wider text-cm-ink mb-2">
-          Aura OS
+          Vértice
         </h2>
         <p className="text-cm-text-mute text-sm md:text-base leading-relaxed">
           Selecione seu perfil, digite sua senha de acesso e inicie o gerenciamento de chamados.

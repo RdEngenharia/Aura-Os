@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { OrdemServico, Usuario } from '../types';
 import { SETORES } from '../mockData';
 import { TicketCard } from './TicketCard';
-import { LayoutDashboard, Filter, Search, Download } from 'lucide-react';
+import { LayoutDashboard, Filter, Search, Download, Tv, ExternalLink, Volume2, VolumeX } from 'lucide-react';
 
 interface SupervisorViewProps {
   ordens: OrdemServico[];
   executores?: Usuario[];
   onAssign: (id: string, executorName: string) => void;
   onDelete?: (id: string) => void;
+  onOpenPainel?: () => void;
 }
 
 /**
@@ -20,7 +21,8 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
   ordens,
   executores = [],
   onAssign,
-  onDelete
+  onDelete,
+  onOpenPainel
 }) => {
   // Estados para Filtros e Modos de Visualização
   const [filterStatus, setFilterStatus] = useState<string>('todas');
@@ -28,6 +30,80 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
   const [filterDate, setFilterDate] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [viewMode, setViewMode] = useState<'lista' | 'fila'>('lista');
+
+  // Configurações de som de alerta para chamados URGENTES
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const lastAlertTime = useRef<number>(0);
+
+  // ---------------- LÓGICA DE ALERTA SONORO ----------------
+  const uncompletedUrgentCount = ordens.filter(
+    o => o.prioridade === 'URGENTE' && o.status !== 'Concluída'
+  ).length;
+
+  const playBeep = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      
+      const playPulse = (startTime: number, freq: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+        
+        // Envelope suave para soar agradável e profissional
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+        gainNode.gain.setValueAtTime(0.15, startTime + duration - 0.04);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+        
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+
+      const startSound = () => {
+        const now = ctx.currentTime;
+        playPulse(now, 880, 0.15); // Nota Lá (A5)
+        playPulse(now + 0.25, 880, 0.15);
+      };
+
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          startSound();
+        }).catch(err => {
+          console.warn('Erro ao tentar retomar AudioContext:', err);
+        });
+      } else {
+        startSound();
+      }
+    } catch (e) {
+      console.warn('Bloqueado pela política de interação do navegador.', e);
+    }
+  };
+
+  // Efeito de monitoramento de chamados urgentes para alertar sonoramente
+  useEffect(() => {
+    if (!soundEnabled || uncompletedUrgentCount === 0) return;
+
+    // Dispara alerta imediato se houver chamados urgentes ativos ao carregar
+    playBeep();
+
+    // Loop periódico a cada 15 segundos se houver urgências não resolvidas
+    const interval = setInterval(() => {
+      const now = Date.now();
+      if (now - lastAlertTime.current > 12000) {
+        playBeep();
+        lastAlertTime.current = now;
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [uncompletedUrgentCount, soundEnabled]);
 
   // Lógica de exportação para PDF
   const handleExportPDF = () => {
@@ -205,7 +281,54 @@ export const SupervisorView: React.FC<SupervisorViewProps> = ({
           <LayoutDashboard className="w-5 h-5 text-cm-ink" />
           <span>Painel de Ordens de Serviço (Supervisor de Manutenção)</span>
         </h3>
-        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Toggle de Alertas Sonoros */}
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+              soundEnabled
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-cm-paper border-cm-line text-cm-text-mute'
+            }`}
+            title={soundEnabled ? 'Alertas sonoros ativados para chamados URGENTES' : 'Alertas sonoros desativados'}
+          >
+            {soundEnabled ? (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                <span className="hidden md:inline">🔔 Som Ativo</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-3.5 h-3.5 text-cm-text-mute" />
+                <span className="hidden md:inline">🔔 Som Mutado</span>
+              </>
+            )}
+          </button>
+
+          {/* Testar Som */}
+          <button
+            onClick={playBeep}
+            className="px-2 py-1.5 rounded-lg border border-cm-line bg-white hover:bg-cm-paper text-xs text-cm-text font-medium transition-all cursor-pointer shadow-xs hidden md:inline-flex"
+            title="Clique para testar o som de aviso sonoro"
+          >
+            🔈 Testar Som
+          </button>
+
+          {/* Botão Painel HDMI de Transmissão */}
+          {onOpenPainel && (
+            <button
+              onClick={() => {
+                window.open(window.location.pathname + '?view=painel', '_blank', 'width=1200,height=800');
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-600 text-xs font-bold rounded-lg transition-all cursor-pointer shadow-sm border border-amber-500/20"
+              title="Abrir Painel em nova janela dedicada para o 2º monitor / TV"
+            >
+              <Tv className="w-3.5 h-3.5" />
+              <span>Painel TV</span>
+              <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
+            </button>
+          )}
+
           {/* Botão Exportar PDF */}
           <button
             onClick={handleExportPDF}

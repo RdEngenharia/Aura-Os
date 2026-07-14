@@ -12,8 +12,6 @@ import {
   Clock, 
   Search, 
   Activity,
-  Volume2,
-  VolumeX,
   Download,
   Calendar,
   SlidersHorizontal,
@@ -111,80 +109,10 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
   const [isLocalDropdownOpen, setIsLocalDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Configurações de som de alerta
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const lastAlertTime = useRef<number>(0);
-
-  // ---------------- LÓGICA DE ALERTA SONORO ----------------
+  // ---------------- LÓGICA DE ALERTA DE URGÊNCIA ----------------
   const uncompletedUrgentCount = ordens.filter(
     o => o.prioridade === 'URGENTE' && o.status !== 'Concluída'
   ).length;
-
-  const playBeep = () => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
-      
-      const playPulse = (startTime: number, freq: number, duration: number) => {
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        
-        osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, startTime);
-        
-        // Esboço de envelope suave para soar agradável e profissional (sem estalos)
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
-        gainNode.gain.setValueAtTime(0.15, startTime + duration - 0.04);
-        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
-        
-        osc.start(startTime);
-        osc.stop(startTime + duration);
-      };
-
-      const startSound = () => {
-        const now = ctx.currentTime;
-        playPulse(now, 880, 0.15); // Nota Lá (A5)
-        playPulse(now + 0.25, 880, 0.15);
-      };
-
-      if (ctx.state === 'suspended') {
-        ctx.resume().then(() => {
-          startSound();
-        }).catch(err => {
-          console.warn('Erro ao tentar retomar AudioContext:', err);
-        });
-      } else {
-        startSound();
-      }
-    } catch (e) {
-      console.warn('Bloqueado pela política de interação do navegador. Aguardando interação do usuário.', e);
-    }
-  };
-
-  // Efeito de monitoramento de chamados urgentes para alertar sonoramente
-  useEffect(() => {
-    if (!soundEnabled || uncompletedUrgentCount === 0) return;
-
-    // Dispara alerta imediato se houver chamados urgentes ativos ao carregar
-    playBeep();
-
-    // Loop periódico a cada 15 segundos se houver urgências não resolvidas
-    const interval = setInterval(() => {
-      const now = Date.now();
-      // Evita loops infinitos ou sobreposição de som
-      if (now - lastAlertTime.current > 12000) {
-        playBeep();
-        lastAlertTime.current = now;
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [uncompletedUrgentCount, soundEnabled]);
 
 
   // ---------------- LÓGICA DE GERAÇÃO DE METRICAS E KPIs GERAIS ----------------
@@ -855,40 +783,8 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
           </p>
         </div>
 
-        {/* CONTROLES RÁPIDOS GERAIS: ALERTA SONORO & EXPORT PDF */}
+        {/* CONTROLES RÁPIDOS GERAIS: EXPORT PDF */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          {/* Toggle de Alertas Sonoros */}
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
-              soundEnabled
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-cm-paper border-cm-line text-cm-text-mute'
-            }`}
-            title={soundEnabled ? 'Alertas sonoros ativados para novos chamados URGENTES' : 'Alertas sonoros desativados'}
-          >
-            {soundEnabled ? (
-              <>
-                <Volume2 className="w-4 h-4 text-emerald-600 animate-pulse" />
-                <span>🔔 Som Ativo</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-cm-text-mute" />
-                <span>🔔 Som Mutado</span>
-              </>
-            )}
-          </button>
-
-          {/* Testar Som */}
-          <button
-            onClick={playBeep}
-            className="px-2.5 py-1.5 rounded-lg border border-cm-line bg-white hover:bg-cm-paper text-xs text-cm-text font-medium transition-all cursor-pointer shadow-xs"
-            title="Clique para testar o som de aviso sonoro"
-          >
-            🔈 Testar Som
-          </button>
-
           {/* Botão de Exportação para PDF */}
           <button
             onClick={handleExportPDF}
@@ -897,8 +793,6 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
             <Download className="w-4 h-4" />
             <span>Exportar PDF</span>
           </button>
-
-
         </div>
       </div>
 
@@ -916,7 +810,7 @@ export const GerenteView: React.FC<GerenteViewProps> = ({ ordens, currentUser, o
               </span>
             </h5>
             <p className="text-[11px] text-red-800 leading-relaxed mt-0.5 font-medium">
-              Há problemas críticos pendentes de atendimento (ex: vazamentos nos quartos). O monitoramento por <b>Aviso Sonoro</b> está ativo para sinalizar até a resolução do técnico.
+              Há problemas críticos pendentes de atendimento (ex: vazamentos nos quartos). Priorize o atendimento imediato destas ordens de serviço.
             </p>
           </div>
         </div>

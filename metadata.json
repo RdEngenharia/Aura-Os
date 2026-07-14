@@ -1,5 +1,5 @@
 {
-  "name": "Aura OS",
+  "name": "Vértice",
   "description": "Sistema completo para gerenciamento e abertura de ordens de serviço de manutenção com múltiplos perfis de usuário.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

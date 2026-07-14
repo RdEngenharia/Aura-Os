@@ -18,6 +18,7 @@ import { SupervisorRecepcaoView } from './components/SupervisorRecepcaoView';
 import { GerenteView } from './components/GerenteView';
 import { AdminView } from './components/AdminView';
 import { MatrixRain } from './components/MatrixRain';
+import { PainelView } from './components/PainelView';
 import { OrdemServico, Usuario, PerfilUsuario } from './types';
 import { ORDENS_INICIAIS } from './mockData';
 
@@ -55,6 +56,17 @@ export default function App() {
   // Sistema de Toasts (Notificações Flutuantes Temporárias)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Estado para controlar se exibe o painel de transmissão em tela cheia (segundo monitor)
+  const [isPainelMode, setIsPainelMode] = useState(false);
+
+  // Escuta se há parâmetro view=painel na URL para abrir direto como standalone
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'painel') {
+      setIsPainelMode(true);
+    }
+  }, []);
+
   /**
    * Dispara um Toast de aviso temporário em tela.
    */
@@ -78,7 +90,21 @@ export default function App() {
    */
   const loadOrdens = (isBackgroundReload = false) => {
     try {
-      const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      let storedData = null;
+
+      // Suporte avançado a janelas abertas via window.open (contorna isolamento de sandbox de iframes)
+      try {
+        if (window.opener && !window.opener.closed) {
+          storedData = window.opener.localStorage.getItem(LOCAL_STORAGE_KEY);
+        }
+      } catch (openerErr) {
+        // Silencia erros de segurança se o navegador bloquear o acesso cross-origin temporariamente
+      }
+
+      if (!storedData) {
+        storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      }
+
       if (storedData) {
         setOrdens(JSON.parse(storedData));
       } else {
@@ -155,12 +181,30 @@ export default function App() {
     loadOrdens(false);
     loadUsuarios();
 
-    // Configura o pooling periódico em background de 10 segundos (para simular atualizações externas do backend)
+    // Sincronização em alta velocidade (2s) caso seja o Painel da TV, ou normal (10s) para o controle geral
+    const isPainel = new URLSearchParams(window.location.search).get('view') === 'painel';
+    const intervalTime = isPainel ? 2000 : 10000;
+
     const interval = setInterval(() => {
       loadOrdens(true);
-    }, 10000);
+    }, intervalTime);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Sincronização reativa instantânea via evento de storage para todas as abas
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === LOCAL_STORAGE_KEY && e.newValue) {
+        try {
+          setOrdens(JSON.parse(e.newValue));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   /**
@@ -328,6 +372,23 @@ export default function App() {
     );
   }
 
+  // Visualização do Painel de Transmissão (HDMI / Monitor Secundário)
+  if (isPainelMode) {
+    return (
+      <PainelView 
+        ordens={ordens} 
+        onBack={() => {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('view') === 'painel') {
+            // Remove o parâmetro da URL sem recarregar a página
+            window.history.pushState({}, '', window.location.pathname);
+          }
+          setIsPainelMode(false);
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cm-paper text-cm-text font-sans antialiased pb-20">
       <div className="max-w-6xl mx-auto px-0 sm:px-4">
@@ -397,6 +458,7 @@ export default function App() {
                   executores={usuarios.filter(u => u.role === 'executor')}
                   onAssign={handleAssignExecutor} 
                   onDelete={handleDeleteOrdem}
+                  onOpenPainel={() => setIsPainelMode(true)}
                 />
               )}
 
